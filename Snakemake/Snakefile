@@ -1,0 +1,103 @@
+#---Example-1-------------------------------------------------------------------
+wildcards = glob_wildcards('input/{seqid}.fna')
+
+print(
+    '1. Krotka nazwowa wildcards:',
+    wildcards,
+    sep='\n',
+    end='\n\n'
+)
+
+
+#---Example-2-------------------------------------------------------------------
+t = ('1', '2', '3')
+a, b, c = t
+
+print('2. Wartości krotki t:', a, b, c, end='\n\n')
+
+
+#---Example-3-------------------------------------------------------------------
+seqids, = wildcards
+
+print(
+    '3. Lista seqids:',
+    seqids,
+    sep='\n',
+    end='\n\n'
+)
+
+
+#---Example-4-------------------------------------------------------------------
+wildcards = glob_wildcards('complex_input/{group}/file_{id}.txt')
+
+print(
+    '4. Krotka nazwowa wildcards:',
+    wildcards,
+    sep='\n',
+    end='\n\n'
+)
+
+
+#---Example-5-------------------------------------------------------------------
+groups, ids = wildcards
+# lub:
+groups = wildcards.group
+ids    = wildcards.id
+
+print(
+    '5a. Lista groups:',
+    groups,
+    sep='\n',
+    end='\n\n'
+)
+
+print(
+    '5b. Lista ids:',
+    ids,
+    sep='\n',
+    end='\n\n'
+)
+
+
+#---Example-6-------------------------------------------------------------------
+paths = expand(
+    'output/{group}/file_{id}.txt',
+    group = groups,
+    id = ids
+)
+
+print(f'6. Lista paths ({len(paths)} elementów):')
+
+for path in paths:
+    print(path)
+
+
+#---Example-7-------------------------------------------------------------------
+paths = expand(
+    'output/{group}/file_{id}.txt',
+    zip,
+    group = groups,
+    id = ids
+)
+
+print(f'\n7. Lista paths ({len(paths)} elementów):')
+
+for path in paths:
+    print(path)
+    
+
+#---Example-8-------------------------------------------------------------------
+qcovs_values = [100, 95, 90]
+ppos_values  = [100, 90, 80]
+
+paths = expand(
+    'output/outfile_qcovs-{qcovs}_ppos-{ppos}.txt',
+    qcovs = qcovs_values,
+    ppos  = ppos_values
+)
+
+print(f'\n8. Lista paths ({len(paths)} elementów):')
+
+for path in paths:
+    print(path)
+
