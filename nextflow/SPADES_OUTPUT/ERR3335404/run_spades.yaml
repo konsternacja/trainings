@@ -1,0 +1,222 @@
+- STAGE: Before start
+  args: []
+  config_dir: ''
+  del_after: []
+  output_files: []
+  path: 'true'
+  short_name: before_start
+- STAGE: Read error correction
+  args: []
+  config_dir: ''
+  del_after: []
+  output_files: []
+  path: 'true'
+  short_name: ec_start
+- STAGE: Read error correction
+  args:
+  - /home/konsternacja/Git/trainings/nextflow/work/e4/ac1f4aada90d42da01da08d5a943b6/ERR3335404/corrected/configs/config.info
+  config_dir: corrected
+  del_after:
+  - tmp/hammer_s46noxg4
+  output_files:
+  - /home/konsternacja/Git/trainings/nextflow/work/e4/ac1f4aada90d42da01da08d5a943b6/ERR3335404/corrected/corrected.yaml
+  path: /usr/libexec/spades/spades-hammer
+  short_name: ec_runtool
+- STAGE: corrected reads compression
+  args:
+  - /usr/share/spades/spades_pipeline/scripts/compress_all.py
+  - --input_file
+  - /home/konsternacja/Git/trainings/nextflow/work/e4/ac1f4aada90d42da01da08d5a943b6/ERR3335404/corrected/corrected.yaml
+  - --ext_python_modules_home
+  - /usr/share/spades
+  - --max_threads
+  - '16'
+  - --output_dir
+  - /home/konsternacja/Git/trainings/nextflow/work/e4/ac1f4aada90d42da01da08d5a943b6/ERR3335404/corrected
+  - --gzip_output
+  config_dir: ''
+  del_after: []
+  output_files: []
+  path: /usr/bin/python3
+  short_name: ec_compress
+- STAGE: Read error correction
+  args: []
+  config_dir: ''
+  del_after: []
+  output_files: []
+  path: 'true'
+  short_name: ec_finish
+- STAGE: Assembling
+  args: []
+  config_dir: ''
+  del_after: []
+  output_files: []
+  path: 'true'
+  short_name: as_start
+- STAGE: K21
+  args:
+  - /home/konsternacja/Git/trainings/nextflow/work/e4/ac1f4aada90d42da01da08d5a943b6/ERR3335404/K21/configs/config.info
+  - /home/konsternacja/Git/trainings/nextflow/work/e4/ac1f4aada90d42da01da08d5a943b6/ERR3335404/K21/configs/careful_mode.info
+  config_dir: K21
+  del_after: []
+  output_files: []
+  path: /usr/libexec/spades/spades-core
+  short_name: k21
+- STAGE: K33
+  args:
+  - /home/konsternacja/Git/trainings/nextflow/work/e4/ac1f4aada90d42da01da08d5a943b6/ERR3335404/K33/configs/config.info
+  - /home/konsternacja/Git/trainings/nextflow/work/e4/ac1f4aada90d42da01da08d5a943b6/ERR3335404/K33/configs/careful_mode.info
+  config_dir: K33
+  del_after: []
+  output_files: []
+  path: /usr/libexec/spades/spades-core
+  short_name: k33
+- STAGE: K55
+  args:
+  - /home/konsternacja/Git/trainings/nextflow/work/e4/ac1f4aada90d42da01da08d5a943b6/ERR3335404/K55/configs/config.info
+  - /home/konsternacja/Git/trainings/nextflow/work/e4/ac1f4aada90d42da01da08d5a943b6/ERR3335404/K55/configs/careful_mode.info
+  config_dir: K55
+  del_after: []
+  output_files: []
+  path: /usr/libexec/spades/spades-core
+  short_name: k55
+- STAGE: K77
+  args:
+  - /home/konsternacja/Git/trainings/nextflow/work/e4/ac1f4aada90d42da01da08d5a943b6/ERR3335404/K77/configs/config.info
+  - /home/konsternacja/Git/trainings/nextflow/work/e4/ac1f4aada90d42da01da08d5a943b6/ERR3335404/K77/configs/careful_mode.info
+  config_dir: K77
+  del_after: []
+  output_files: []
+  path: /usr/libexec/spades/spades-core
+  short_name: k77
+- STAGE: K99
+  args:
+  - /home/konsternacja/Git/trainings/nextflow/work/e4/ac1f4aada90d42da01da08d5a943b6/ERR3335404/K99/configs/config.info
+  - /home/konsternacja/Git/trainings/nextflow/work/e4/ac1f4aada90d42da01da08d5a943b6/ERR3335404/K99/configs/careful_mode.info
+  config_dir: K99
+  del_after: []
+  output_files: []
+  path: /usr/libexec/spades/spades-core
+  short_name: k99
+- STAGE: K127
+  args:
+  - /home/konsternacja/Git/trainings/nextflow/work/e4/ac1f4aada90d42da01da08d5a943b6/ERR3335404/K127/configs/config.info
+  - /home/konsternacja/Git/trainings/nextflow/work/e4/ac1f4aada90d42da01da08d5a943b6/ERR3335404/K127/configs/careful_mode.info
+  config_dir: K127
+  del_after: []
+  output_files: []
+  path: /usr/libexec/spades/spades-core
+  short_name: k127
+- STAGE: Copy files
+  args:
+  - /usr/share/spades/spades_pipeline/scripts/copy_files.py
+  - /home/konsternacja/Git/trainings/nextflow/work/e4/ac1f4aada90d42da01da08d5a943b6/ERR3335404/K127/before_rr.fasta
+  - /home/konsternacja/Git/trainings/nextflow/work/e4/ac1f4aada90d42da01da08d5a943b6/ERR3335404/before_rr.fasta
+  - /home/konsternacja/Git/trainings/nextflow/work/e4/ac1f4aada90d42da01da08d5a943b6/ERR3335404/K127/assembly_graph_after_simplification.gfa
+  - /home/konsternacja/Git/trainings/nextflow/work/e4/ac1f4aada90d42da01da08d5a943b6/ERR3335404/assembly_graph_after_simplification.gfa
+  - /home/konsternacja/Git/trainings/nextflow/work/e4/ac1f4aada90d42da01da08d5a943b6/ERR3335404/K127/final_contigs.fasta
+  - /home/konsternacja/Git/trainings/nextflow/work/e4/ac1f4aada90d42da01da08d5a943b6/ERR3335404/contigs.fasta
+  - /home/konsternacja/Git/trainings/nextflow/work/e4/ac1f4aada90d42da01da08d5a943b6/ERR3335404/K127/first_pe_contigs.fasta
+  - /home/konsternacja/Git/trainings/nextflow/work/e4/ac1f4aada90d42da01da08d5a943b6/ERR3335404/first_pe_contigs.fasta
+  - /home/konsternacja/Git/trainings/nextflow/work/e4/ac1f4aada90d42da01da08d5a943b6/ERR3335404/K127/strain_graph.gfa
+  - /home/konsternacja/Git/trainings/nextflow/work/e4/ac1f4aada90d42da01da08d5a943b6/ERR3335404/strain_graph.gfa
+  - /home/konsternacja/Git/trainings/nextflow/work/e4/ac1f4aada90d42da01da08d5a943b6/ERR3335404/K127/scaffolds.fasta
+  - /home/konsternacja/Git/trainings/nextflow/work/e4/ac1f4aada90d42da01da08d5a943b6/ERR3335404/scaffolds.fasta
+  - /home/konsternacja/Git/trainings/nextflow/work/e4/ac1f4aada90d42da01da08d5a943b6/ERR3335404/K127/scaffolds.paths
+  - /home/konsternacja/Git/trainings/nextflow/work/e4/ac1f4aada90d42da01da08d5a943b6/ERR3335404/scaffolds.paths
+  - /home/konsternacja/Git/trainings/nextflow/work/e4/ac1f4aada90d42da01da08d5a943b6/ERR3335404/K127/assembly_graph_with_scaffolds.gfa
+  - /home/konsternacja/Git/trainings/nextflow/work/e4/ac1f4aada90d42da01da08d5a943b6/ERR3335404/assembly_graph_with_scaffolds.gfa
+  - /home/konsternacja/Git/trainings/nextflow/work/e4/ac1f4aada90d42da01da08d5a943b6/ERR3335404/K127/assembly_graph.fastg
+  - /home/konsternacja/Git/trainings/nextflow/work/e4/ac1f4aada90d42da01da08d5a943b6/ERR3335404/assembly_graph.fastg
+  - /home/konsternacja/Git/trainings/nextflow/work/e4/ac1f4aada90d42da01da08d5a943b6/ERR3335404/K127/final_contigs.paths
+  - /home/konsternacja/Git/trainings/nextflow/work/e4/ac1f4aada90d42da01da08d5a943b6/ERR3335404/contigs.paths
+  config_dir: ''
+  del_after:
+  - .bin_reads
+  - tmp/spades_mjmxiyui
+  output_files: []
+  path: /usr/bin/python3
+  short_name: copy_files
+- STAGE: Assembling
+  args: []
+  config_dir: ''
+  del_after: []
+  output_files: []
+  path: 'true'
+  short_name: as_finish
+- STAGE: Mismatch correction
+  args: []
+  config_dir: ''
+  del_after: []
+  output_files: []
+  path: 'true'
+  short_name: mc_start
+- STAGE: Mismatch correction contigs
+  args:
+  - /usr/share/spades/spades_pipeline/scripts/correction_iteration_script.py
+  - --corrected
+  - /home/konsternacja/Git/trainings/nextflow/work/e4/ac1f4aada90d42da01da08d5a943b6/ERR3335404/contigs.fasta
+  - --assembled
+  - /home/konsternacja/Git/trainings/nextflow/work/e4/ac1f4aada90d42da01da08d5a943b6/ERR3335404/misc/assembled_contigs.fasta
+  - --assembly_type
+  - contigs
+  - --output_dir
+  - /home/konsternacja/Git/trainings/nextflow/work/e4/ac1f4aada90d42da01da08d5a943b6/ERR3335404
+  - --bin_home
+  - /usr/libexec/spades
+  config_dir: mismatch_corrector/contigs
+  del_after:
+  - mismatch_corrector/contigs/tmp
+  - tmp/corrector_bzpril5t
+  output_files: []
+  path: /usr/bin/python3
+  short_name: mc_contigs
+- STAGE: Mismatch correction scaffolds
+  args:
+  - /usr/share/spades/spades_pipeline/scripts/correction_iteration_script.py
+  - --corrected
+  - /home/konsternacja/Git/trainings/nextflow/work/e4/ac1f4aada90d42da01da08d5a943b6/ERR3335404/scaffolds.fasta
+  - --assembled
+  - /home/konsternacja/Git/trainings/nextflow/work/e4/ac1f4aada90d42da01da08d5a943b6/ERR3335404/misc/assembled_scaffolds.fasta
+  - --assembly_type
+  - scaffolds
+  - --output_dir
+  - /home/konsternacja/Git/trainings/nextflow/work/e4/ac1f4aada90d42da01da08d5a943b6/ERR3335404
+  - --bin_home
+  - /usr/libexec/spades
+  config_dir: mismatch_corrector/scaffolds
+  del_after:
+  - mismatch_corrector/scaffolds/tmp
+  - tmp/corrector_oxcaqn6p
+  output_files: []
+  path: /usr/bin/python3
+  short_name: mc_scaffolds
+- STAGE: Mismatch correction
+  args: []
+  config_dir: ''
+  del_after: []
+  output_files: []
+  path: 'true'
+  short_name: mc_finish
+- STAGE: Breaking scaffolds
+  args:
+  - /usr/share/spades/spades_pipeline/scripts/breaking_scaffolds_script.py
+  - --result_scaffolds_filename
+  - /home/konsternacja/Git/trainings/nextflow/work/e4/ac1f4aada90d42da01da08d5a943b6/ERR3335404/scaffolds.fasta
+  - --misc_dir
+  - /home/konsternacja/Git/trainings/nextflow/work/e4/ac1f4aada90d42da01da08d5a943b6/ERR3335404/misc
+  - --threshold_for_breaking_scaffolds
+  - '3'
+  config_dir: ''
+  del_after: []
+  output_files: []
+  path: /usr/bin/python3
+  short_name: bs
+- STAGE: Terminate
+  args: []
+  config_dir: ''
+  del_after:
+  - configs
+  output_files: []
+  path: 'true'
+  short_name: terminate
