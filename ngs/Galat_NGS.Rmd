@@ -1,0 +1,513 @@
+---
+title: "NGS and data analysis -- final report"
+author: "Konstancja Gałat"
+date: "January 23 2024"
+output:
+  html_document:
+    df_print: paged
+---
+
+# Introduction
+
+Next Generation Sequencing (NGS) encompasses a set of techniques designed for the acquisition and examination of genomic and transcriptomic data. The forthcoming report will concentrate on the analysis of transcriptomic data, with a specific emphasis on RNA sequencing.
+
+# Analysis
+
+## Installing required packages
+
+```{r}
+# install.packages("BiocManager") # library for management of bioconductor env
+# BiocManager::install("Rsubread") # Read aligning and mapping
+# BiocManager::install("edgeR") # Differential Expression for advanced
+# BiocManager::install("limma") # Microarray-like approach
+# BiocManager::install("DESeq2") # Differential Expression for dummies
+```
+
+```{r message=FALSE, warning=FALSE, paged.print=FALSE}
+library(Rsubread)
+library(edgeR)
+library(limma)
+library(DESeq2)
+```
+
+## Visualisation
+
+Merged information about genes and transcripts (data.RData file) was loaded into the environment.
+
+```{r}
+load("data.RData")
+head(genes.merged)
+head(trans.merged)
+```
+
+Batch plots were created in order to get an overview of relations between samples. Each point on each plot represents a single genomic site and has X and Y values equal to logarithm of relevant counts.
+
+```{r}
+pairs(log10(genes.merged+0.1), pch='.')
+```
+
+Alternative transcripts for AT3G01150 were found.
+
+```{r}
+T2G <- data.frame(transID = rownames(trans.merged), geneID = substr(rownames(trans.merged), 0, 9))
+rownames(T2G) <- T2G$transID
+head(T2G)
+
+T2G[T2G$geneID == 'AT3G01150',]
+```
+
+Smooth scatter (heatmap) plots comparing WT to OE were created. 
+
+```{r}
+smoothScatter(log10(genes.merged[,2] + 0.1), log10(genes.merged[,3] + 0.1),
+     main='OE1 vs WT', xlab="WT", ylab="OE", pch='.', col='blue')
+abline(a=0, b=1, col='orange')
+```
+
+AT3G01150 locus was emphasized on the scatter plot as an example. It is depicted with a magenta X on the figure below.
+
+```{r}
+sel.g <- "AT3G01150"
+cols <- rep("black", dim(genes.merged)[1])
+pchs <- rep(".", dim(genes.merged)[1])
+
+names(cols) <- names(pchs) <- rownames(genes.merged)
+cols[sel.g] <- "magenta"
+pchs[sel.g] <- "X"
+
+plot(log10(genes.merged[,3] + 0.1), log10(genes.merged[,2] + 0.1),
+     main='OE1 vs WT - genes', xlab="WT", ylab="OE", pch=pchs, col=cols,)
+abline(a=0, b=1, col='orange')
+```
+
+The same thing was done for the transcripts data.
+
+```{r}
+sel.t <- T2G$transID[T2G$geneID == sel.g]
+cols <- rep("black", dim(trans.merged)[1])
+pchs <- rep(".", dim(trans.merged)[1])
+names(cols) <- names(pchs) <- rownames(trans.merged)
+cols[sel.t] <- "cyan"
+pchs[sel.t] <- "X"
+
+plot(log10(trans.merged[,3] + 0.1), log10(trans.merged[,2] + 0.1),
+     main='OE1 vs WT - transcripts', xlab="WT", ylab="OE", pch=pchs, col=cols)
+points(log10(trans.merged[sel.t,3] + 0.1), log10(trans.merged[sel.t,2] + 0.1), pch="X", col="cyan")
+abline(a=0, b=1, col='orange')
+```
+
+It turned out that there are 4 different transcripts (variants) corresponding to the AT3G01150 gene.
+
+Scatter plots of transcripts vs genes for OE_1_R2 and WT_R1 were prepared. Significantly differentiating transcripts were depicted with red X.
+
+```{r}
+sel.t <- T2G$transID[T2G$geneID == sel.g]
+cols <- rep("black", dim(trans.merged)[1])
+pchs <- rep(".", dim(trans.merged)[1])
+names(cols) <- names(pchs) <- rownames(trans.merged)
+cols[sel.t] <- "red"
+pchs[sel.t] <- "X"
+
+plot(log10(genes.merged[T2G$geneID,2] + 0.1), log10(trans.merged[,2] + 0.1),
+     main='gene vs transcript OE_1_R2', xlab="genes", ylab="transcripts", pch=pchs, col=cols)
+abline(a=0, b=1, col='orange')
+```
+
+```{r}
+plot(log10(genes.merged[T2G$geneID,3] + 0.1), log10(trans.merged[,3] + 0.1),
+     main='gene vs transcript WT_R2', xlab="genes", ylab="transcripts", pch=pchs, col=cols)
+abline(a=0, b=1, col='orange')
+```
+
+## DGE for genes with limma
+
+All samples were split into two categories: OE and WT and contrasts between the two were defined as cm variable using limma.
+
+```{r}
+samples <- substr(colnames(genes.merged), 0, 2)
+design <- data.frame(OEs=ifelse(samples=="OE", 1, 0),
+                     WTs=ifelse(samples=="WT", 1, 0))
+
+rownames(design) <- colnames(genes.merged)
+design
+```
+
+```{r}
+cm <- makeContrasts(OEvsWT=OEs-WTs,
+                    levels=design)
+cm
+```
+
+Initially, the identification of differentially expressed genes was conducted, and the results were stored in the variable 'dge.' Subsequent to this, normalization was carried out using the 'edgeR::calcNormFactors()' function, implementing TMM normalization. TMM normalization adjusts library sizes by assuming that the majority of genes are not differentially expressed, ensuring the comparability of expression values across sequences.
+
+The creation of a multidimensional matrix containing weight values was facilitated by the 'limma::voom()' transformation. These weights were then applied in the 'limma::lmFit()' function to establish a linear model. Following this, 'limma::contrasts.fit()' was employed to compute coefficients for a given matrix and design. To smooth out standard errors, Bayes correction was applied through 'limma::eBayes.'
+
+Subsequently, 'limma::topTable()' generated a table highlighting the top-rated genes. The Benjamini-Hochberg method was employed for $p$-value correction, aiming to mitigate potential false positives. Finally, genes with adjusted $p$-values below 0.05 were selected.
+
+```{r}
+dge <- DGEList(counts=genes.merged)
+names(dge)
+
+dge <- calcNormFactors(dge) 
+dge$samples
+```
+
+```{r}
+v <- voom(dge, design, plot=FALSE)
+names(v)
+summary(genes.merged)
+summary(v$E)
+```
+
+```{r}
+f.t <- lmFit(v, design) 
+cf <- contrasts.fit(f.t, cm)
+fe <- eBayes(cf, proportion=0.01) 
+
+# multiple testing correction
+adj.method="BH"
+limma.countTMMvoom.genes <- topTable(fe, number=Inf, adjust.method=adj.method,
+                                  sort.by='none',) 
+head(limma.countTMMvoom.genes)
+
+sum(limma.countTMMvoom.genes$adj.P.Val<0.05)
+limma.countTMMvoom.genes[limma.countTMMvoom.genes$adj.P.Val<0.05,]
+limma.countTMMvoom.genes[sel.g,]
+```
+
+Only one gene (AT3G01150) was significantly differentiating. This gene was indicated using a red \* on a MA plot of OE vs WT below. Additionally volcano plot was created.
+
+```{r}
+pchs <- rep(".", dim(limma.countTMMvoom.genes)[1])
+colors <- rep("black", dim(limma.countTMMvoom.genes)[1])
+names(pchs) <- names(colors) <- rownames(limma.countTMMvoom.genes)
+pchs[sel.g] <- "*"
+colors[sel.g] <- "red"
+plot(
+limma.countTMMvoom.genes$AveExpr,
+limma.countTMMvoom.genes$logFC,
+col = colors,
+pch = pchs,
+xlab = "Average Expression",
+ylab = "log(FC)",
+main="MA plot of genes (limma)",
+)
+abline(h=0, col = "orange", lwd = 2)
+```
+
+```{r}
+plot(
+limma.countTMMvoom.genes$logFC,
+-log10(limma.countTMMvoom.genes$P.Value),
+col = colors,
+pch = pchs,
+xlab = "Average Expression",
+ylab = "log(FC)",
+main="Volcano plot of genes (limma)",
+)
+```
+
+### DGE for transcripts with limma
+
+The same steps were taken, but this time, transcripts data was used.
+
+```{r}
+dge <- DGEList(counts=trans.merged)
+names(dge)
+
+dge <- calcNormFactors(dge) 
+dge$samples
+```
+
+```{r}
+v <- voom(dge, design, plot=FALSE)
+names(v)
+summary(trans.merged)
+summary(v$E)
+```
+
+```{r}
+f.t <- lmFit(v, design) 
+cf <- contrasts.fit(f.t, cm)
+fe <- eBayes(cf, proportion=0.01)
+
+adj.method="BH"
+limma.countTMMvoom.trans <- topTable(fe, number=Inf, adjust.method=adj.method,
+                                  sort.by='none',) 
+head(limma.countTMMvoom.trans)
+sum(limma.countTMMvoom.trans$adj.P.Val<0.05)
+
+limma.countTMMvoom.trans[limma.countTMMvoom.trans$adj.P.Val<0.05,]
+limma.countTMMvoom.trans[sel.t,]
+```
+Only one transcript was significantly differentiating. This transcript was indicated using a red \* on a MA plot of OE vs WT below. Additionally volcano plot was created.
+
+```{r}
+pchs <- rep(".", dim(limma.countTMMvoom.trans)[1])
+colors <- rep("black", dim(limma.countTMMvoom.trans)[1])
+names(pchs) <- names(colors) <- rownames(limma.countTMMvoom.trans)
+pchs[sel.t] <- "*"
+colors[sel.t] <- "red"
+plot(
+limma.countTMMvoom.trans$AveExpr,
+limma.countTMMvoom.trans$logFC,
+col = colors,
+pch = pchs,
+xlab = "Average Expression",
+ylab = "log(FC)",
+main="MA plot of transcripts (limma)",
+)
+abline(h=0, col = "orange", lwd = 2)
+```
+
+```{r}
+plot(
+limma.countTMMvoom.trans$logFC,
+-log10(limma.countTMMvoom.trans$P.Val),
+col = colors,
+pch = pchs,
+xlab = "Average Expression",
+ylab = "log(FC)",
+main="Volcano plot of transcripts (limma)",
+)
+```
+
+MA plot showing transcripts vs genes was created. 
+
+```{r}
+pchs <- rep(".", dim(limma.countTMMvoom.trans)[1])
+colors <- rep("black", dim(limma.countTMMvoom.trans)[1])
+names(pchs) <- names(colors) <- rownames(limma.countTMMvoom.trans)
+pchs[sel.t] <- "*"
+colors[sel.t] <- "red"
+plot(
+limma.countTMMvoom.trans$AveExpr,
+limma.countTMMvoom.genes[T2G$geneID,]$logFC,
+col = colors,
+pch = pchs,
+xlab = "Average Expression - transcripts",
+ylab = "log(FC) - genes",
+main="MA plot transcripts vs genes (limma)",
+)
+abline(h=0, col = "orange", lwd = 2)
+```
+
+## DGE for genes with edgeR
+
+The next step was to construct a DGEList object and run a series of statistical tests using edgeR. Both quasi-likelihood F-test and classic likelihood ratio test were used to determine p-values. MA plots were generated, significantly differentiating genes/transcripts were indicated using a red \*.
+
+```{r}
+group <- factor(c("2", "2","1", "1"))
+y <- DGEList(counts = genes.merged, group=group)
+keep <- filterByExpr(y)
+design <- model.matrix(~group)
+y <-  estimateDisp(y, design)
+```
+
+```{r}
+genes_fit <- glmQLFit(y,design)
+genes_qlf <- glmQLFTest(genes_fit, coef=2)
+genes.qlf.tT <- topTags(genes_qlf, n=Inf)
+```
+
+```{r}
+genes_fit <- glmFit(y,design)
+genes_lrt <-  glmLRT(genes_fit, coef=2)
+genes.lrt.tT <- topTags(genes_lrt, n=Inf)
+```
+
+```{r}
+pchs <- rep(".", dim(genes.lrt.tT$table)[1])
+colors <- rep("black", dim(genes.lrt.tT$table)[1])
+names(pchs) <- names(colors) <- rownames(genes.lrt.tT$table)
+pchs[sel.g] <- "*"
+colors[sel.g] <- "red"
+plot(
+genes.lrt.tT$table$logCPM,
+genes.lrt.tT$table$logFC,
+col = colors,
+pch = pchs,
+xlab = "log(CPM)",
+ylab = "log(FC)",
+main="MA plot of genes (edgeR, lrt)",
+)
+abline(h=0, col = "orange", lwd = 2)
+```
+
+```{r}
+pchs <- rep(".", dim(genes.qlf.tT$table)[1])
+colors <- rep("black", dim(genes.qlf.tT$table)[1])
+names(pchs) <- names(colors) <- rownames(genes.qlf.tT$table)
+pchs[sel.g] <- "*"
+colors[sel.g] <- "red"
+plot(
+genes.qlf.tT$table$logCPM,
+genes.qlf.tT$table$logFC,
+col = colors,
+pch = pchs,
+xlab = "log(CPM)",
+ylab = "log(FC)",
+main="MA plot of genes (edgeR, qlf)",
+)
+abline(h=0, col = "orange", lwd = 2)
+```
+
+## DGE for transcripts with edgeR
+
+The same steps were taken but this time the data for the transcripts was used.
+
+```{r}
+z <- DGEList(counts = trans.merged, group=group)
+keep <- filterByExpr(z)
+z <-  estimateDisp(z, design)
+```
+
+```{r}
+trans_fit <- glmQLFit(z,design)
+trans_qlf <- glmQLFTest(trans_fit, coef=2)
+trans.qlf.tT <- topTags(trans_qlf, n=Inf)
+```
+
+```{r}
+trans_fit_lh <- glmFit(z,design)
+trans_lrt <-  glmLRT(trans_fit, coef=2)
+trans.lrt.tT <- topTags(trans_lrt, n=Inf)
+```
+
+```{r}
+pchs <- rep(".", dim(trans.lrt.tT$table)[1])
+colors <- rep("black", dim(trans.lrt.tT$table)[1])
+names(pchs) <- names(colors) <- rownames(trans.lrt.tT$table)
+pchs[sel.t] <- "*"
+colors[sel.t] <- "red"
+plot(
+trans.lrt.tT$table$logCPM,
+trans.lrt.tT$table$logFC,
+col = colors,
+pch = pchs,
+xlab = "log(CPM)",
+ylab = "log(FC)",
+main="MA plot of transcripts (edgeR, lrt)",
+)
+abline(h=0, col = "orange", lwd = 2)
+```
+
+```{r}
+pchs <- rep(".", dim(trans.qlf.tT$table)[1])
+colors <- rep("black", dim(trans.qlf.tT$table)[1])
+names(pchs) <- names(colors) <- rownames(trans.qlf.tT$table)
+pchs[sel.t] <- "*"
+colors[sel.t] <- "red"
+plot(
+trans.qlf.tT$table$logCPM,
+trans.qlf.tT$table$logFC,
+col = colors,
+pch = pchs,
+xlab = "log(CPM)",
+ylab = "log(FC)",
+main="MA plot of transcripts (edgeR, qlf)",
+)
+abline(h=0, col = "orange", lwd = 2)
+```
+
+```{r}
+head(genes.lrt.tT)
+```
+
+```{r}
+head(genes.qlf.tT)
+```
+
+```{r}
+head(trans.lrt.tT)
+```
+
+```{r}
+head(trans.qlf.tT)
+```
+
+From the results above it can be deduced that there are no genes or transcripts that pass a quasi-likelihood test (high FDR), there are however 5 genes and 9 transcripts that pass classic likelihood test.
+
+## DGE for genes with DeSeq2
+
+First, the design was created (condition variable), outlining how to model the samples. Subsequently, DeSeq2 was employed to identify significantly different genes. MA plots were generated, significantly differentiationg genes/transcripts were indicated using a red dots.
+
+```{r}
+condition <- factor(c("OE", "OE", "WT", "WT"))
+```
+
+```{r message=FALSE, warning=FALSE, paged.print=FALSE}
+condition <- factor(c("OE", "OE", "WT", "WT"))
+coldata.genes <- data.frame(row.names = colnames(genes.merged), condition)
+dds.genes <- DESeqDataSetFromMatrix(
+countData = round(genes.merged),
+colData = coldata.genes,
+design = ~condition
+)
+dds.genes <- DESeq(dds.genes)
+res.genes <- results(dds.genes)
+```
+
+```{r}
+genes.res.v1 <- results(dds.genes, name = "condition_WT_vs_OE")
+```
+
+```{r}
+genes.res.v1[genes.res.v1$padj<0.05, ]
+```
+
+```{r}
+plotMA(genes.res.v1, 
+       ylim=c(-4,6), 
+       main = "MA plot of genes (DeSeq2)", 
+       colNonSig="black", 
+       colSig="red")
+abline(h=0, col = "orange", lwd = 1)
+```
+
+## DGE for transcripts with DeSeq2
+
+The same thing was done for the transcripts data.
+
+```{r message=FALSE, warning=FALSE, paged.print=FALSE}
+coldata.trans <- data.frame(row.names = colnames(trans.merged), condition)
+dds.trans <- DESeqDataSetFromMatrix(
+countData = round(trans.merged),
+colData = coldata.trans,
+design = ~condition
+)
+dds.trans <- DESeq(dds.trans)
+res.trans <- results(dds.trans)
+```
+
+```{r}
+trans.res.v1 <- results(dds.trans, name = "condition_WT_vs_OE")
+```
+
+```{r}
+trans.res.v1$padj <- p.adjust(trans.res.v1$pvalue, method = "BH")
+trans.res.v1[trans.res.v1$padj<0.05, ]
+sum(trans.res.v1$padj<0.05)
+```
+
+```{r}
+plotMA(trans.res.v1, 
+       ylim=c(-6,6), 
+       main = "MA plot of transcripts (DeSeq2)", 
+       colNonSig="black", 
+       colSig="red")
+abline(h=0, col = "orange", lwd = 1)
+```
+
+When using DESeq2 the results are 4 significantly differentiating genes and 11 transcripts.
+
+# Conclusions
+
+## Summary
+
+Due to the limited number of replicates (only two), individual analyses yielded disparate results. Employing the limma method revealed one gene and its corresponding transcript as significantly differentiating. However, using edgeR led to divergent outcomes based on whether the quasi-likelihood (qlf) method or the classic likelihood (lrt) ratio was applied. The lrt method identified 5 genes and 9 transcripts, while the qlf method, being more stringent, failed to identify the gene or the corresponding transcript. Utilizing DeSeq2 identified 4 genes and 11 transcripts, indicating the presence of false positives.
+
+## Discussion
+
+The observed discrepancy highlights that the expected results were achieved solely through the limma method. Other methods either proved overly restrictive or prone to false positives. This experiment underscores the non-trivial nature of selecting an appropriate method when dealing with a limited number of replicates. It is crucial to emphasize the necessity of testing multiple methods since, under typical circumstances, the expected outcomes are uncertain.
+

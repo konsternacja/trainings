@@ -1,7 +1,0 @@
-"bwa": "/usr/bin/bwa"
-"dataset": "/home/konsternacja/Git/trainings/nextflow/work/e4/ac1f4aada90d42da01da08d5a943b6/ERR3335404/input_dataset.yaml"
-"log_filename": "log.properties"
-"max_nthreads": !!int "16"
-"output_dir": "/home/konsternacja/Git/trainings/nextflow/work/e4/ac1f4aada90d42da01da08d5a943b6/ERR3335404/mismatch_corrector/contigs"
-"strategy": "mapped_squared"
-"work_dir": "/home/konsternacja/Git/trainings/nextflow/work/e4/ac1f4aada90d42da01da08d5a943b6/ERR3335404/tmp/corrector_bzpril5t"
