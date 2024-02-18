@@ -1,0 +1,21 @@
+pytest test/name_of_test.py
+
+pytest -s -> only then sth is printed
+
+@pytest.fixture is for functions (one object that can be used in a multiple functions)
+
+conftest.py - global fixtures
+
+@pytest.mark.slow -> this is slow test!
+pytest -m slow (we skip slow tests)
+
+@pytest.mark.skip(reason='') -> this test won't be done
+
+@pytest.mark.xfail -> we know this is gonna fail
+
+example: 4 passed, 1 skipped, 1 xfailed
+
+@pytest.mark.parametrize("side_length, expected_area", [(5, 25), (4,16), (9,81)])
+^ few assertions at a time
+
+mocking = isolating 
