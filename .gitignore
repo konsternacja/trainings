@@ -2,5 +2,6 @@
 *.RData
 *.Rhistory
 pokemon*
+eligo*
 
 __pycache__
