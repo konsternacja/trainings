@@ -1,0 +1,11 @@
+pip freeze > requirements.txt
+
+docker build -t name .  -> builiding an image .
+
+docker run (-t -i) name  -> builiding container
+
+WORKDIR /fastapi
+
+COPY requirements.txt .
+better than
+ADD main.py
