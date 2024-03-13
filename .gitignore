@@ -1,6 +1,9 @@
 *.zip
 *.RData
 *.Rhistory
+*.nextflow
+data*
+work*
 pokemon*
 eligo*
 docker/imdb/venv/*
